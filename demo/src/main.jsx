@@ -9,5 +9,5 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// The page picks its version (#roll, #record) on load, so switching the hash in an open tab reloads it.
+// The page picks its version (#record) on load, so switching the hash in an open tab reloads it.
 window.addEventListener('hashchange', () => location.reload())
