@@ -42,8 +42,119 @@ const HASH = typeof location !== 'undefined' ? location.hash : '';
 const RECORD = HASH.startsWith('#record');
 // Exploration: the same page, but every digit change in the amount moves (#roll).
 const ROLL = HASH.includes('roll');
+const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches;
 
 export default function App() {
+  return ROLL ? <RollPage /> : <OfferApp />;
+}
+
+/* ─────────────────  Exploration: rolling amount (#roll)  ─────────────────
+   Only the amount block from the loan page, scaled up, so the eye stays on how
+   the number moves. Type on the keyboard, or use a preset to jump amounts. */
+const ROLL_SCRIPT = [
+  ['type', '8000'], ['wait', 900], ['del'], ['wait', 500], ['del'], ['wait', 700],
+  ['set', '1500'], ['wait', 1300], ['set', '800'], ['wait', 1300], ['set', '8000'], ['wait', 1400],
+  ['clear'], ['wait', 700],
+];
+function RollPage() {
+  const [raw, setRaw] = useState('');
+  const [tried, setTried] = useState(null);
+  const [focus, setFocus] = useState(false);
+  const [z, setZ] = useState(1);
+  const run = useRef(0);
+  const input = useRef(null);
+  const rawRef = useRef(raw); rawRef.current = raw;
+
+  const press = (k) => {
+    const cur = rawRef.current;
+    if (k === 'del') return setRaw(cur.slice(0, -1));
+    if (k === '.' && (cur.includes('.') || cur === '')) return;
+    if (cur.includes('.') && cur.split('.')[1].length >= 2) return;
+    const next = cur === '0' && k !== '.' ? k : cur + k;
+    if (Number(next) > CREDIT) return;
+    setRaw(next);
+  };
+  const stop = () => { run.current++; };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const play = async () => {
+    const id = ++run.current; setTried(null); setRaw('');
+    await wait(500);
+    do {
+      for (const [op, arg] of ROLL_SCRIPT) {
+        if (run.current !== id) return;
+        if (op === 'type') { for (const k of arg) { if (run.current !== id) return; press(k); await wait(170); } }
+        else if (op === 'del') press('del');
+        else if (op === 'set') { setTried(arg); setRaw(arg); }
+        else if (op === 'clear') { setTried(null); setRaw(''); }
+        else await wait(arg);
+      }
+    } while (RECORD && run.current === id);
+  };
+
+  useEffect(() => {
+    const fit = () => setZ(Math.min(RECORD ? 2.4 : 1.8, (window.innerWidth - 32) / 390, (window.innerHeight - (RECORD ? 60 : 220)) / 200));
+    fit(); window.addEventListener('resize', fit);
+    const key = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      let k = null;
+      if (/^[0-9]$/.test(e.key)) k = e.key;
+      else if (e.key === '.') k = '.';
+      else if (e.key === 'Backspace' || e.key === 'Delete') k = 'del';
+      if (!k) return;
+      e.preventDefault(); stop(); setTried(null); setFocus(true); press(k);
+    };
+    if (!RECORD) window.addEventListener('keydown', key);
+    if (RECORD) play();
+    return () => { window.removeEventListener('resize', fit); window.removeEventListener('keydown', key); stop(); };
+  }, []);
+
+  const preset = (v) => { stop(); setTried(v); setRaw(v); };
+
+  return (
+    <main className={RECORD ? 'page record roll-page' : 'page roll-page'}>
+      <div className="roll-stage" style={{ width: 390 * z, height: 172 * z }}>
+        <div className="roll-card screen" style={{ transform: `scale(${z})` }} onClick={() => { setFocus(true); input.current?.focus(); }}>
+          <div className="amount-block">
+            <div className="label">Loan Amount</div>
+            <div className="amount" aria-live="polite">
+              <span className="yen">¥</span>
+              <RollingDigits value={raw} />
+              {(focus || raw === '') && <span className="caret" />}
+            </div>
+            <div className="credit">Available Credit ¥{CREDIT.toFixed(2)}</div>
+          </div>
+          {/* Phones: tapping the amount brings up the number pad. Keys are read from the window listener. */}
+          <input ref={input} className="roll-input" inputMode="decimal" aria-label="Loan amount" value="" onChange={() => {}}
+            onInput={(e) => { const ev = e.nativeEvent; stop(); setTried(null); if (ev.inputType === 'deleteContentBackward') press('del'); else for (const c of ev.data || '') if (/[0-9.]/.test(c)) press(c); }} />
+        </div>
+      </div>
+
+      {!RECORD && (
+        <header className="meta">
+          <div className="meta-title">Rolling amount</div>
+          <div className="meta-sub">WeChat Pay · Shuyi Yuan</div>
+        </header>
+      )}
+
+      {!RECORD && (
+        <div className="dock-area">
+          <p className="caption">{TOUCH ? 'Tap the amount to type, or jump to an amount.' : 'Type on your keyboard, or jump to an amount.'}</p>
+          <div className="dock" role="toolbar" aria-label="Demo controls">
+            <span className="dock-label">Jump to</span>
+            {TRY.map((t) => (
+              <button key={t.v} className={tried === t.v ? 'chip on' : 'chip'} onClick={() => preset(t.v)}>¥{t.label}</button>
+            ))}
+            <span className="dock-sep" aria-hidden="true" />
+            <button className="dock-btn" onClick={play}><PlayIcon /><span>Replay</span></button>
+            <button className="dock-icon" onClick={() => { stop(); setTried(null); setRaw(''); }} aria-label="Clear" title="Clear"><ResetIcon /></button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function OfferApp() {
   const [raw, setRaw] = useState('');
   // The account: credit and coupons change after a loan (R9).
   const [account, setAccount] = useState({ credit: CREDIT, coupons: COUPONS });
@@ -138,10 +249,7 @@ export default function App() {
   // Hint buttons type the amount on the keypad, the same way a person would.
   const [tried, setTried] = useState(null);
   const tryAmount = async (v) => {
-    const run = ++playRef.current; setPlaying(false); setStep(-1); setTried(v);
-    // Rolling version: a preset jumps straight to the new amount, so every column spins like an odometer.
-    if (ROLL) { setKeypad(false); setSheet(null); setLoan(null); edit(v); return; }
-    reset('', true); await wait(250);
+    const run = ++playRef.current; setPlaying(false); setStep(-1); setTried(v);    reset('', true); await wait(250);
     await tap(v, run, 90);
     await wait(MATCH_DELAY + 300);
     if (playRef.current === run) setKeypad(false);
@@ -275,7 +383,7 @@ function Phone({ raw, bar, amount, list, keypad, flash, sheet, onFocus, onPress,
           <div className="label">Loan Amount</div>
           <button className="amount" onClick={onFocus} aria-label="Edit loan amount">
             <span className="yen">¥</span>
-            {ROLL ? <RollingDigits value={raw} /> : <span className="digits">{raw}</span>}
+            <span className="digits">{raw}</span>
             {(keypad || raw === '') && <span className="caret" />}
           </button>
           <div className="credit">Available Credit ¥{credit.toFixed(2)}</div>

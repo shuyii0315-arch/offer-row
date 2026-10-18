@@ -94,6 +94,12 @@ button:focus-visible { outline: 2px solid var(--line); outline-offset: 2px; bord
 .amount { display: flex; align-items: center; height: 44px; margin-top: 16px; text-align: left; width: 100%; }
 .amount .yen { font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 26px; font-weight: 700; margin-right: 8px; }
 .amount .digits { font-family: 'WeChat Sans SS', 'WeChat Sans Std', 'Roboto Local', -apple-system, sans-serif; font-weight: 500; font-size: 40px; letter-spacing: 0; line-height: 44px; font-variant-numeric: tabular-nums; }
+/* Rolling amount page (#roll): only the amount block, scaled up */
+.roll-stage { position: relative; flex: none; }
+.roll-card { position: absolute; left: 0; top: 0; width: 390px; height: 172px; transform-origin: 0 0; border-radius: 20px; overflow: visible; cursor: text; }
+.roll-input { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+.roll-page .dock-area { margin-top: 12px; }
+
 /* Rolling digits (#roll) */
 .digits.roll { display: inline-flex; height: 44px; }
 .roll .col { display: inline-block; height: 44px; overflow: hidden; max-width: 1em; }
@@ -264,3 +270,6 @@ button.coupon { width: 100%; text-align: left; font: inherit; color: inherit; }
   .dock-btn { min-width: 0; padding: 0 10px 0 9px; gap: 5px; }
   .dock-sep { margin: 0 2px; }
 }
+
+/* The rolling page stays centered on phones too. */
+.page.roll-page { justify-content: center; }
