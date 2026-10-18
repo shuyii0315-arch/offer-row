@@ -118,7 +118,7 @@ function RollPage() {
     <main className={RECORD ? 'page record roll-page' : 'page roll-page'}>
       {/* The top of the real phone: frame, status bar, nav and the amount. The rest is cropped away. */}
       <div className="roll-stage" style={{ width: 410 * z, height: CROP * z }}>
-        <div className="roll-crop" style={{ transform: `scale(${z})` }} onClick={() => { setFocus(true); input.current?.focus(); }}>
+        <div className="roll-crop" style={{ transform: `scale(${z})` }} onClick={() => { setFocus(true); if (TOUCH) input.current?.focus({ preventScroll: true }); }}>
           <div className="phone" role="img" aria-label="Loan amount, top of the loan page">
             <div className="screen">
               <StatusBar />

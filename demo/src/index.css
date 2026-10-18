@@ -99,7 +99,9 @@ button:focus-visible { outline: 2px solid var(--line); outline-offset: 2px; bord
 .roll-crop { position: absolute; left: 0; top: 0; width: 410px; height: 330px; transform-origin: 0 0; overflow: hidden; cursor: text;
   -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
 .roll-crop .phone { box-shadow: none; }
-.roll-input { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+/* overflow: clip, not hidden: a clipped box can't be scrolled, so focusing never shifts the phone up. */
+.roll-crop { overflow: clip; }
+.roll-input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
 .roll-page .dock-area { margin-top: 12px; }
 
 /* Rolling digits (#roll) */
