@@ -436,14 +436,22 @@ function RollingDigits({ value }) {
       const leaving = live.slice(value.length).map((it) => ({ ...it, state: 'out' }));
       return [...next, ...leaving];
     });
-    const t = setTimeout(() => setItems((cur) => cur.filter((it) => it.state !== 'out')), 220);
+    const t = setTimeout(() => setItems((cur) => cur.filter((it) => it.state !== 'out')), 260);
     return () => clearTimeout(t);
   }, [value]);
+  // Measure a digit and a dot once, so each column's width can animate (the caret glides with it).
+  const probe = useRef(null);
+  const [w, setW] = useState({ d: 0, dot: 0 });
+  useLayoutEffect(() => {
+    const [d, dot] = probe.current.children;
+    setW({ d: d.offsetWidth, dot: dot.offsetWidth }); // layout px, unaffected by the page's scale
+  }, []);
   const n = items.filter((it) => it.state !== 'out').length;
   return (
-    <span className="digits roll" aria-label={value}>
+    <span className="digits roll" aria-label={value} style={w.d ? { '--cw': w.d + 'px', '--dw': w.dot + 'px' } : undefined}>
+      <span ref={probe} className="probe" aria-hidden="true"><span>0</span><span>.</span></span>
       {items.map((it, i) => (
-        <span key={it.id} className={'col ' + it.state} style={{ '--d': /\d/.test(it.ch) ? it.ch : 0, '--delay': Math.max(0, n - 1 - i) * 30 + 'ms' }} aria-hidden="true">
+        <span key={it.id} className={'col ' + it.state + (/\d/.test(it.ch) ? '' : ' dot')} style={{ '--d': /\d/.test(it.ch) ? it.ch : 0, '--delay': Math.max(0, n - 1 - i) * 30 + 'ms' }} aria-hidden="true">
           {/\d/.test(it.ch)
             ? <span className="strip">{'0123456789'.split('').map((d) => <span key={d}>{d}</span>)}</span>
             : <span className="strip">{it.ch}</span>}
