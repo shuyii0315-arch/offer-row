@@ -102,6 +102,9 @@ function RollPage() {
       else if (e.key === '.') k = '.';
       else if (e.key === 'Backspace' || e.key === 'Delete') k = 'del';
       if (!k) return;
+      // On a phone the hidden input is focused: digits arrive as input events (handled there),
+      // so only Backspace is taken here. Handling both would type every digit twice.
+      if (document.activeElement === input.current && k !== 'del') return;
       e.preventDefault(); stop(); setTried(null); setFocus(true); press(k);
     };
     if (!RECORD) window.addEventListener('keydown', key);
@@ -133,7 +136,7 @@ function RollPage() {
           </div>
           {/* Phones: tapping the amount brings up the number pad. Keys are read from the window listener. */}
           <input ref={input} className="roll-input" inputMode="decimal" aria-label="Loan amount" value="" onChange={() => {}}
-            onInput={(e) => { const ev = e.nativeEvent; stop(); setTried(null); if (ev.inputType === 'deleteContentBackward') press('del'); else for (const c of ev.data || '') if (/[0-9.]/.test(c)) press(c); }} />
+            onInput={(e) => { const ev = e.nativeEvent; stop(); setTried(null); if (ev.inputType === 'deleteContentBackward') return; else for (const c of ev.data || '') if (/[0-9.]/.test(c)) press(c); }} />
         </div>
       </div>
 
