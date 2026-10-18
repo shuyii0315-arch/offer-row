@@ -148,13 +148,13 @@ export default function App() {
   const [view, setView] = useState({ zoom: 1, mobile: false, h: 844 });
   useEffect(() => {
     const fit = () => {
-      const mobile = !RECORD && window.matchMedia('(max-width: 500px)').matches;
+      const mobile = false; // phones get the same framed layout as desktop, just scaled to fit
       if (mobile) {
         const w = document.documentElement.clientWidth, h = window.visualViewport?.height ?? window.innerHeight;
         const zoom = w / 390;
         setView({ zoom, mobile, h: Math.floor(h / zoom) });
       } else {
-        setView({ zoom: Math.min(RECORD ? 2 : 1, (window.innerHeight - (RECORD ? 48 : 150)) / 864, (window.innerWidth - 32) / 410), mobile, h: 844 });
+        setView({ zoom: Math.min(RECORD ? 2 : 1, ((window.visualViewport?.height ?? window.innerHeight) - (RECORD ? 48 : window.innerWidth < 500 ? 118 : 150)) / 864, (window.innerWidth - 32) / 410), mobile, h: 844 });
       }
     };
     fit(); window.addEventListener('resize', fit);

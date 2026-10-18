@@ -234,3 +234,15 @@ button.coupon { width: 100%; text-align: left; font: inherit; color: inherit; }
 .sent .st-text.t3 .st-sub { color: var(--app-sub); }
 .st-reminder { position: absolute; left: 0; right: 0; top: 622px; margin: 0 auto; width: max-content; display: flex; align-items: center; gap: 4px; font-size: 14px; color: #fa9d3b; }
 .st-done { position: absolute; left: 103px; top: 666px; width: 184px; height: 48px; border-radius: 8px; background: rgba(0,0,0,.05); font-size: 17px; font-weight: 600; color: var(--app-text); }
+
+/* Phone browsers: same framed layout, scaled down; the dock gets compact so it fits one line. */
+@media (max-width: 500px) {
+  .page { padding-block: 16px 20px; gap: 14px; justify-content: flex-start; }
+  .dock-area { gap: 10px; }
+  .caption { height: auto; min-height: 18px; font-size: 12px; padding-inline: 8px; }
+  .dock { gap: 2px; padding: 3px; font-size: 12.5px; }
+  .dock-label { display: none; }
+  .chip { padding: 0 9px; }
+  .dock-btn { min-width: 0; padding: 0 10px 0 9px; gap: 5px; }
+  .dock-sep { margin: 0 2px; }
+}
