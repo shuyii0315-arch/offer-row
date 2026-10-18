@@ -2,7 +2,7 @@
 
 A working rebuild of the offer row I designed for the WeChat Pay Fenfu loan page.
 
-**[Try it live →](LIVE_URL)**
+**[Try it live →](https://shuyii0315-arch.github.io/offer-row/)**
 
 ![Four states of the offer row: preview, applied, unavailable, and why](docs/states.png)
 
