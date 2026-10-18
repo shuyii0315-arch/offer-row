@@ -56,6 +56,7 @@ const ROLL_SCRIPT = [
   ['set', '1500'], ['wait', 1300], ['set', '800'], ['wait', 1300], ['set', '8000'], ['wait', 1400],
   ['clear'], ['wait', 700],
 ];
+const CROP = 330; // px of the 864px phone that stay visible
 function RollPage() {
   const [raw, setRaw] = useState('');
   const [tried, setTried] = useState(null);
@@ -92,7 +93,7 @@ function RollPage() {
   };
 
   useEffect(() => {
-    const fit = () => setZ(Math.min(RECORD ? 2.4 : 1.8, (window.innerWidth - 32) / 390, (window.innerHeight - (RECORD ? 60 : 220)) / 200));
+    const fit = () => setZ(Math.min(RECORD ? 2.2 : 1.6, (window.innerWidth - 32) / 410, (window.innerHeight - (RECORD ? 48 : 200)) / CROP));
     fit(); window.addEventListener('resize', fit);
     const key = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -112,16 +113,23 @@ function RollPage() {
 
   return (
     <main className={RECORD ? 'page record roll-page' : 'page roll-page'}>
-      <div className="roll-stage" style={{ width: 390 * z, height: 172 * z }}>
-        <div className="roll-card screen" style={{ transform: `scale(${z})` }} onClick={() => { setFocus(true); input.current?.focus(); }}>
-          <div className="amount-block">
-            <div className="label">Loan Amount</div>
-            <div className="amount" aria-live="polite">
-              <span className="yen">¥</span>
-              <RollingDigits value={raw} />
-              {(focus || raw === '') && <span className="caret" />}
+      {/* The top of the real phone: frame, status bar, nav and the amount. The rest is cropped away. */}
+      <div className="roll-stage" style={{ width: 410 * z, height: CROP * z }}>
+        <div className="roll-crop" style={{ transform: `scale(${z})` }} onClick={() => { setFocus(true); input.current?.focus(); }}>
+          <div className="phone" role="img" aria-label="Loan amount, top of the loan page">
+            <div className="screen">
+              <StatusBar />
+              <div className="nav"><img src={arrowLeft} width="12" height="24" alt="" /></div>
+              <div className="amount-block">
+                <div className="label">Loan Amount</div>
+                <div className="amount" aria-live="polite">
+                  <span className="yen">¥</span>
+                  <RollingDigits value={raw} />
+                  {(focus || raw === '') && <span className="caret" />}
+                </div>
+                <div className="credit">Available Credit ¥{CREDIT.toFixed(2)}</div>
+              </div>
             </div>
-            <div className="credit">Available Credit ¥{CREDIT.toFixed(2)}</div>
           </div>
           {/* Phones: tapping the amount brings up the number pad. Keys are read from the window listener. */}
           <input ref={input} className="roll-input" inputMode="decimal" aria-label="Loan amount" value="" onChange={() => {}}
