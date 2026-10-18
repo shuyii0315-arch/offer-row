@@ -38,7 +38,10 @@ const PlayIcon = () => (<svg width="12" height="12" viewBox="0 0 12 12" aria-hid
 const StopIcon = () => (<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2.5" width="7" height="7" rx="1.2" fill="currentColor" /></svg>);
 const ResetIcon = () => (<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.8 8a5.2 5.2 0 1 0 1.6-3.75M2.6 1.9v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 
-const RECORD = typeof location !== 'undefined' && location.hash === '#record';
+const HASH = typeof location !== 'undefined' ? location.hash : '';
+const RECORD = HASH.startsWith('#record');
+// Exploration: the same page, but every digit change in the amount moves (#roll).
+const ROLL = HASH.includes('roll');
 
 export default function App() {
   const [raw, setRaw] = useState('');
@@ -136,6 +139,8 @@ export default function App() {
   const [tried, setTried] = useState(null);
   const tryAmount = async (v) => {
     const run = ++playRef.current; setPlaying(false); setStep(-1); setTried(v);
+    // Rolling version: a preset jumps straight to the new amount, so every column spins like an odometer.
+    if (ROLL) { setKeypad(false); setSheet(null); setLoan(null); edit(v); return; }
     reset('', true); await wait(250);
     await tap(v, run, 90);
     await wait(MATCH_DELAY + 300);
@@ -270,7 +275,7 @@ function Phone({ raw, bar, amount, list, keypad, flash, sheet, onFocus, onPress,
           <div className="label">Loan Amount</div>
           <button className="amount" onClick={onFocus} aria-label="Edit loan amount">
             <span className="yen">¥</span>
-            <span className="digits">{raw}</span>
+            {ROLL ? <RollingDigits value={raw} /> : <span className="digits">{raw}</span>}
             {(keypad || raw === '') && <span className="caret" />}
           </button>
           <div className="credit">Available Credit ¥{credit.toFixed(2)}</div>
@@ -293,6 +298,39 @@ function Phone({ raw, bar, amount, list, keypad, flash, sheet, onFocus, onPress,
         <div className="home" aria-hidden="true" />
       </div>
     </div>
+  );
+}
+
+/* Rolling digits. Each position is a 0–9 strip behind a 44px window:
+   typed digits rise in, deleted ones drop out, and a jump to a new amount spins
+   every column to its new digit, right to left, like an odometer. */
+let rollId = 0;
+function RollingDigits({ value }) {
+  const [items, setItems] = useState(() => [...value].map((ch) => ({ id: ++rollId, ch, state: 'idle' })));
+  const prev = useRef(value);
+  useEffect(() => {
+    const from = prev.current; prev.current = value;
+    if (from === value) return;
+    setItems((cur) => {
+      const live = cur.filter((it) => it.state !== 'out');
+      const next = [...value].map((ch, i) => (live[i] ? { ...live[i], ch, state: 'idle' } : { id: ++rollId, ch, state: 'in' }));
+      const leaving = live.slice(value.length).map((it) => ({ ...it, state: 'out' }));
+      return [...next, ...leaving];
+    });
+    const t = setTimeout(() => setItems((cur) => cur.filter((it) => it.state !== 'out')), 220);
+    return () => clearTimeout(t);
+  }, [value]);
+  const n = items.filter((it) => it.state !== 'out').length;
+  return (
+    <span className="digits roll" aria-label={value}>
+      {items.map((it, i) => (
+        <span key={it.id} className={'col ' + it.state} style={{ '--d': /\d/.test(it.ch) ? it.ch : 0, '--delay': Math.max(0, n - 1 - i) * 30 + 'ms' }} aria-hidden="true">
+          {/\d/.test(it.ch)
+            ? <span className="strip">{'0123456789'.split('').map((d) => <span key={d}>{d}</span>)}</span>
+            : <span className="strip">{it.ch}</span>}
+        </span>
+      ))}
+    </span>
   );
 }
 
